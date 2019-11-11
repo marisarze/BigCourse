@@ -29,12 +29,12 @@ default_config_dir = r'C:\Users\Tom\Documents\temp\config.txt'
 
 def get_new_config(path, old_config):
     try:
-        logging.info('Trying open file: %s' %path)
+        logging.info('Trying open config file: %s' %path)
         config_file = open(path, 'r')
-        logging.info('Trying read file: %s' %path)
+        logging.info('Trying read config file: %s' %path)
         temp_str = config_file.read()
     except:
-        logging.exception('Error occured when trying open or read the file in %s' %path)
+        logging.exception('Error: can not open or read the file in %s' %path)
         sys.exit()
 
     try:
@@ -49,7 +49,7 @@ def get_new_config(path, old_config):
             old_config[key]=priority_config[key]
     return old_config
 
-def parsing_generator(path):
+def parser(path):
     if path.endswith(".gz"):
         input_file = gzip.open(path)
     else:
@@ -74,7 +74,10 @@ def parsing_generator(path):
     for line in input_file:
         data = re.search(line_format, line)
         if data:
-            data = data.groupdict()
+            yield data.groupdict()
+        else:
+            yield None
+    input_file.close()
 
 
 def main():
@@ -97,40 +100,32 @@ def main():
     file_names = [f for f in file_names if re.search("^nginx-access-ui.log-[0-9]{8}\.(gz|plain)",f)]
     if file_names:
         file_name = os.path.join(input_dir, max(file_names))
-
-
-    
-    time_list = dict()
-    all_lines = logfile.readlines()
-    bad_count = 0
-    good_count = 0
-    all_time = 0.0
-    for line in all_lines:
-        data = re.search(line_format, line)
-        if data:
-            data = data.groupdict()
-            dt = float(data['request_time'])
-            if data['request_url'] in time_list.keys():
-                time_list[data['request_url']].append(dt)
+        time_dict = dict()
+        bad_count, good_count = 0, 0
+        all_time = 0.0
+        for entry in parser(file_name):
+            if entry:
+                dt = entry['request_time']
+                if entry['request_url'] in time_dict.keys():
+                    time_dict[entry['request_url']].append(dt)
+                else:
+                    time_list[entry['request_url']] = [dt]
+                all_time += dt
+                good_count += 1
             else:
-                time_list[data['request_url']] = [dt]
-            all_time += dt
-            good_count += 1
-        else:
-            bad_count += 1
-        print bad_count+good_count, line
+                bad_count += 1
 
-    for key in time_list.keys():
-        count[key] = len(time_list[key])
+    count, count_perc, time_sum, time_perc, time_avg, time_max, time_med = 0, 0, 0, 0, 0, 0, 0
+    for key in time_dict.keys():
+        count[key] = len(time_dict[key])
         count_perc[key] = count[key]//good_count
-        time_sum[key] = sum(time_list[key])
+        time_sum[key] = sum(time_dict[key])
         time_perc[key] = time_sum[key]//all_time
         time_avg[key] = time_sum[key]//count[key]
         time_max[key] = max(time_sum[key])
-        temp_sorted = sorted(time_list[key])
+        temp = sorted(time_dict[key])
         n = count[key]
-        time_med[key] = (sum(temp_sorted[n//2-1:n//2+1])/2.0, temp_sorted[count[key]//2])[n % 2] if n else None
-    print len(time_list.keys())
+        time_med[key] = (sum(temp[n//2-1:n//2+1])/2.0, temp[count[key]//2])[n % 2] if n else None
     logfile.close()
 
 
