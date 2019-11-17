@@ -16,9 +16,7 @@ import logging
 import operator
 from string import Template
 
-logging.basicConfig(format='[%(asctime)s] %(levelname)s %(message)s', 
-                    datefmt='%Y.%m.%d %H:%M:%S',
-                    level=logging.INFO)
+
 config = {
     "REPORT_SIZE": 1000,
     "REPORT_DIR": "./reports",
@@ -26,33 +24,49 @@ config = {
 }
 
 
-default_config_dir = './configs'
-
-
 def get_new_config(path, old_config):
+    """
+
+    Возвращает дополненную версию словаря old_config, в который
+    дописано содержимое конфигурационного файла path. Данные 
+    в файле path должны быть записаны в виде json-структуры или
+    python-словаря.
+
+    """
+
     try:
-        config_file = open(path, 'r')
-        temp_str = config_file.read()
-        logging.info('Сonfig file reading from: {}'.format(path))
+        with open(path, 'r') as config_file:
+            temp_str = config_file.read()
+            logging.info('Чтение файла конфигурации из: {}'.format(path))
     except:
-        logging.exception('Error: can not open or read the file {}'.format(path))
+        logging.exception('Ошибка открытия либо чтения файла {}'.format(path))
         sys.exit()
 
     try:
         priority_config = json.loads(temp_str)
-        logging.info('Config file data extracted')
+        logging.info('Данные файла конфигурации успешно прочитаны')
     except:
-        logging.exception('Error: Config file contains incorrect data')
+        logging.exception('Ошибка. Файл конфигурации содержит некорректные данные')
         sys.exit()
 
     if priority_config:
         for key in priority_config.keys():
             old_config[key]=priority_config[key]
-    logging.info('Configuration data updated')
+    logging.info('Конфигурация обновлена')
     return old_config
 
+
 def parser(path):
-    logging.info('Opening log file for parsing {}'.format(path))
+    """
+    
+    Возвращает генератор, выдающий словарь распознанных значений
+    параметров строки в log-файле path. Итерация проходит по строкам.
+    В случае безуспешной попытки распозначить значения строки в файле 
+    path возвращается None.
+
+    """
+
+    logging.info('Открыте входного log-файла для чтения: {}'.format(path))
     if path.endswith(".gz"):
         input_file = gzip.open(path)        
     else:
@@ -81,91 +95,137 @@ def parser(path):
         else:
             yield None
     input_file.close()
-    logging.info('log file closed')
+    logging.info('Входной log-файл прочитан')
 
 
 def main():
-    logging.info('Starting execution of the script')
-    tolerance = 0.8
-    if '--config' in sys.argv:
-        config_dir = sys.argv[sys.argv.index('--config')+1]
-        logging.info('External config file preferred')
-    else:
-        config_dir = default_config_dir
-        logging.info('Default configuration directory selected')
+    """
 
-    config = get_new_config(config_dir, config)
-    if 'OUT_LOG' in config.keys():
-        logging.info('Setting logging output to {}'.format(config['OUT_LOG']))
-        logging.basicConfig(filename=config['OUT_LOG'], 
-                    format='[%(asctime)s] %(levelname)s %(message)s', 
-                    datefmt='%Y.%m.%d %H:%M:%S',
-                    level=logging.INFO)
-    if 'SUCCESS_PERC' in config.keys():
-        tolerance = config['SUCCESS_PERC']
-    input_dir = config['LOG_DIR']
+    Скрипт создает отчет по обработке содержимого nginx log-файла. Параметры работы
+    скрипта указываеются при запуске в терминале через опцию --config path. В path находится
+    конфигурационный файл в виде json-структуры. 
 
-    log_name_re = "^nginx-access-ui.log-(?P<file_date>[0-9]{8})\.(gz|plain)"
-    file_names = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-    file_names = [f for f in file_names if re.search(log_name_re,f)]
+    Параметры, определяемые в конфигурационном файле:
+      
+    "REPORT_SIZE": количество URL в отчете с наибольшим суммарным временем обработки
+    "REPORT_DIR": выходная директория где создается отчет по работе скрипта 
+    "LOG_DIR": директория, содержащая входные log-файлы для обработки
+    "FAIL_PERC": верхний допустимое отношение неудачно распознанных строк входного лога,
+                превышение которого останавливает работу скрипта (по умолчанию 0.1)
+    "OUT_LOG": путь выходного log-файл работы скрипта.
 
-    if not file_names:
-        logging.info('There is no any input log file in directory: {} \n Script is stopping.'.format(input_dir))
-        sys.exit()
+    В случае отсутстствия опций запуска скрипт попытается считать конфигурационный файл
+    по относительному пути './configs/config.txt'
 
-    file_name = max(file_names)
-    file_date = re.search(log_name_re, file_name).groupdict()['file_date']
-    if os.path.isfile(os.path.join(input_dir,'report-{}.html'.format(file_date))):
-        logging.info('Output report file is already exist. Finishing execution.')
-        sys.exit()
-    
-    time_dict = dict()
-    bad_count, good_count = 0, 0
-    all_time = 0.0
-    full_name = os.path.join(input_dir, file_name)
-    logging.info('Starting parsing...')
-    for entry in parser(full_name):
-        if entry:
-            dt = entry['request_time']
-            if entry['request_url'] in time_dict.keys():
-                time_dict[entry['request_url']].append(dt)
-            else:
-                time_dict[entry['request_url']] = [dt]
-            all_time += dt
-            good_count += 1
+    """
+    try:
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s %(message)s', '%Y.%m.%d %H:%M:%S')
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(formatter)
+        logging.getLogger().setLevel(logging.INFO)
+        logging.getLogger().addHandler(stream_handler)
+
+        logging.info('--------------------------------')
+        logging.info('Запуск скрипта...')
+        config = {}
+        fail_limit = 0.1
+        default_config_dir = './configs/config.txt'
+
+        if '--config' in sys.argv:
+            config_dir = sys.argv[sys.argv.index('--config')+1]
+            logging.info('Выбран внешний файл конфигурации')
         else:
-            bad_count += 1
+            config_dir = default_config_dir
+            logging.info('Выбран файл конфигурации по умолчанию')
 
-    if good_count/(good_count+bad_count) < tolerance:
-        logging.error('Insufficient percentage of successfully processed lines \
-                        for the further script running. Finishing execution.')
+        config = get_new_config(config_dir, config)
+        if 'OUT_LOG' in config.keys():
+            out_log = os.path.abspath(config['OUT_LOG'])
+            logging.info('Логгирование дополнительно ведется в файл {}'.format(out_log))
+            if not os.path.exists(os.path.dirname(out_log)):
+                os.makedirs(os.path.dirname(out_log))
+            file_handler = logging.FileHandler(out_log)
+            file_handler.setFormatter(formatter)
+            logging.getLogger().addHandler(file_handler)
+
+        if 'FAIL_PERC' in config.keys():
+            fail_limit = config['FAIL_PERC']
+        input_dir = config['LOG_DIR']
+
+        log_name_re = "^nginx-access-ui.log-(?P<file_date>[0-9]{8})\.(gz|plain)"
+        file_names = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        file_names = [f for f in file_names if re.search(log_name_re,f)]
+
+        if not file_names:
+            logging.info('В директории входных логов отсутствуют файлы с шаблонным названием: {}. Прерывание работы скрипта.'.format(input_dir))
+            sys.exit()
+
+        file_name = max(file_names)
+        file_date = re.search(log_name_re, file_name).groupdict()['file_date']
+        if os.path.isfile(os.path.join(config['REPORT_DIR'],'report-{}.html'.format(file_date))):
+            logging.info('Выходной отчет по последнему log-файлу уже существует. Прерывание работы скрипта.')
+            sys.exit()
+        
+        time_dict = dict()
+        bad_count, good_count = 0, 0
+        all_time = 0.0
+        full_name = os.path.join(input_dir, file_name)
+        for entry in parser(full_name):
+            if entry:
+                dt = float(entry['request_time'])
+                if entry['request_url'] in time_dict.keys():
+                    time_dict[entry['request_url']].append(dt)
+                else:
+                    time_dict[entry['request_url']] = [dt]
+                all_time += dt
+                good_count += 1
+            else:
+                bad_count += 1
+
+        if bad_count/(good_count+bad_count) > fail_limit:
+            logging.error('Высокий процент неудачно обработанных строк во входном log-файле. Прерывание работы скрипта.')
+            sys.exit()
+
+        time_sum = dict()
+        for url in time_dict.keys():
+            time_sum[url] = sum(time_dict[url])
+        time_sorted = sorted(time_sum.items(), key=operator.itemgetter(1), reverse=True)
+        out_list = list()
+        logging.info('Вычисление выходных значений таблицы отчета')
+        for url, sum_value in time_sorted[:config['REPORT_SIZE']]:
+            n = len(time_dict[url])
+            temp = sorted(time_dict[url])
+            out_list.append({'count': n,
+                            'time_avg': sum_value/n,
+                            'time_max': max(time_dict[url]),
+                            'time_sum': sum_value,
+                            'url': url,
+                            'time_med': (sum(temp[n//2-1:n//2+1])/2.0, temp[n//2])[n % 2] if n else None,
+                            'time_perc': sum_value/all_time,
+                            'count_perc': n/good_count
+                            })
+        
+        logging.info('Округление значений для вставки в отчет...')
+        for elem in out_list:
+            for key in elem.keys():
+                if isinstance(elem[key], float):
+                    elem[key] = round(elem[key], 4)
+
+        with open('report.html', 'r') as f:
+            html_template = f.read()
+        if not os.path.exists(config['REPORT_DIR']):
+            os.makedirs(config['REPORT_DIR'])
+        out_report_name = os.path.join(config['REPORT_DIR'], 'report-{}.html'.format(file_date))
+        with open(out_report_name, 'w') as out_report:
+            html_out = Template(html_template).safe_substitute(table_json=str(out_list))
+            out_report.write(html_out)
+        logging.info('Результат работы скрипта записан в файл {}'.format(out_report_name))
+        logging.info('Работа скрипта успешно завершена.')
+    except SystemExit:
         sys.exit()
-
-    time_sum = dict()
-    for url in time_dict.keys():
-        time_sum[url] = sum(time_dict[url])
-    time_sorted = sorted(time_sum.item(), key=operator.itemgetter(1), reverse=True)
-    out_list = list()
-    logging.info('Calculation of output values')
-    for url, sum_value in time_sorted[:config['REPORT_SIZE']]:
-        n = len(time_dict[url])
-        temp = sorted(time_dict[url])
-        out_list.append({'count': n,
-                        'time_avg': sum_value/n,
-                        'time_max': max(time_dict[url]),
-                        'time_sum': sum_value,
-                        'url': url,
-                        'time_med': (sum(temp[n/2-1:n/2+1])/2.0, temp[n/2])[n % 2] if n else None,
-                        'time_perc': sum_value/all_time,
-                        'count_perc': n/good_count
-                        })
-    
-    html_template = open('report.html', 'r').read()
-    out_report = open('report-{}.html'.format(file_date), 'w')
-    html_out = Template(html_template).safe_substitute(table_json=str(out_list))
-    out_report.write(html_out)
-    out_report.close()
-    logging.info('Log analysis completed successfully')
+    except:
+        logging.exception('Неизвестная ошибка. Прерывание работы скрипта.')
+        sys.exit()
         
 
 
