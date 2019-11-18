@@ -14,6 +14,7 @@ import re
 import gzip
 import logging
 import operator
+import platform
 from string import Template
 
 
@@ -98,7 +99,7 @@ def parser(path):
     logging.info('Входной log-файл прочитан')
 
 
-def main():
+def main(options=sys.argv):
     """
 
     Скрипт создает отчет по обработке содержимого nginx log-файла. Параметры работы
@@ -114,8 +115,10 @@ def main():
                 превышение которого останавливает работу скрипта (по умолчанию 0.1)
     "OUT_LOG": путь выходного log-файл работы скрипта.
 
+
+
     В случае отсутстствия опций запуска скрипт попытается считать конфигурационный файл
-    по относительному пути './configs/config.txt'
+    по относительному пути './configs/config.txt' относительно своего расположения.
 
     """
     try:
@@ -130,13 +133,16 @@ def main():
         config = {}
         fail_limit = 0.1
         default_config_dir = './configs/config.txt'
-
-        if '--config' in sys.argv:
-            config_dir = sys.argv[sys.argv.index('--config')+1]
+        if platform.system() == 'Linux':
+            default_config_dir = r'/usr/local/etc/'
+            
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+        if '--config' in options:
+            config_dir = options[options.index('--config')+1]
             logging.info('Выбран внешний файл конфигурации')
         else:
             config_dir = default_config_dir
-            logging.info('Выбран файл конфигурации по умолчанию')
+            logging.info('Опция --config не указана, ыбран файл конфигурации по умолчанию')
 
         config = get_new_config(config_dir, config)
         if 'OUT_LOG' in config.keys():
@@ -150,7 +156,7 @@ def main():
 
         if 'FAIL_PERC' in config.keys():
             fail_limit = config['FAIL_PERC']
-        input_dir = config['LOG_DIR']
+        input_dir = os.path.abspath(config['LOG_DIR'])
 
         log_name_re = "^nginx-access-ui.log-(?P<file_date>[0-9]{8})\.(gz|plain)"
         file_names = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
