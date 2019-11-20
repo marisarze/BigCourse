@@ -40,14 +40,14 @@ def get_new_config(path, old_config):
             temp_str = config_file.read()
             logging.info('Чтение файла конфигурации из: {}'.format(path))
     except:
-        logging.exception('Ошибка открытия либо чтения файла {}'.format(path))
+        logging.exception('Ошибка открытия или чтения файла {}'.format(path))
         sys.exit()
 
     try:
         priority_config = json.loads(temp_str)
         logging.info('Данные файла конфигурации успешно прочитаны')
     except:
-        logging.exception('Ошибка. Файл конфигурации содержит некорректные данные')
+        logging.exception('Файл конфигурации содержит некорректные данные')
         sys.exit()
 
     if priority_config:
@@ -99,6 +99,16 @@ def parser(path):
     logging.info('Входной log-файл прочитан')
 
 
+def close_logging():
+    """
+
+    Закрытие потоков логгирования. Развязка процесса от файла выходного лога.
+
+    """
+    for handler in logging.getLogger().handlers:
+        handler.close()
+
+
 def main(options=sys.argv):
     """
 
@@ -106,43 +116,41 @@ def main(options=sys.argv):
     скрипта указываеются при запуске в терминале через опцию --config path. В path находится
     конфигурационный файл в виде json-структуры. 
 
-    Параметры, определяемые в конфигурационном файле:
-      
-    "REPORT_SIZE": количество URL в отчете с наибольшим суммарным временем обработки
-    "REPORT_DIR": выходная директория где создается отчет по работе скрипта 
-    "LOG_DIR": директория, содержащая входные log-файлы для обработки
-    "FAIL_PERC": верхний допустимое отношение неудачно распознанных строк входного лога,
-                превышение которого останавливает работу скрипта (по умолчанию 0.1)
-    "OUT_LOG": путь выходного log-файл работы скрипта.
+    Параметры, определяемые в конфигурационном файле:  
+        "REPORT_SIZE": количество URL в отчете с наибольшим суммарным временем обработки
+        "REPORT_DIR": выходная директория где создается отчет по работе скрипта 
+        "LOG_DIR": директория, содержащая входные log-файлы для обработки
+        "FAIL_PERC": верхний допустимое отношение неудачно распознанных строк входного лога,
+                    превышение которого останавливает работу скрипта (по умолчанию 0.1)
+        "OUT_LOG": путь выходного log-файл работы скрипта.
 
-
-
-    В случае отсутстствия опций запуска скрипт попытается считать конфигурационный файл
-    по относительному пути './configs/config.txt' относительно своего расположения.
+    В случае отсутствия опций запуска скрипт попытается считать конфигурационный файл
+    из директории './configs/config.txt' относительно своего расположения.
 
     """
     try:
+        os.chdir(os.path.dirname(os.path.realpath(__file__)))
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s %(message)s', '%Y.%m.%d %H:%M:%S')
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
         logging.getLogger().setLevel(logging.INFO)
         logging.getLogger().addHandler(stream_handler)
-
-        logging.info('--------------------------------')
         logging.info('Запуск скрипта...')
         config = {}
-        fail_limit = 0.1
-        default_config_dir = './configs/config.txt'
+        fail_limit = 0.5
+        input_dir = '.'
+        out_report_dir = '.'
+        default_config_dir = os.path.abspath(r'./configs/config.txt')
         if platform.system() == 'Linux':
             default_config_dir = r'/usr/local/etc/'
             
-        os.chdir(os.path.dirname(os.path.realpath(__file__)))
+
         if '--config' in options:
             config_dir = options[options.index('--config')+1]
             logging.info('Выбран внешний файл конфигурации')
         else:
             config_dir = default_config_dir
-            logging.info('Опция --config не указана, ыбран файл конфигурации по умолчанию')
+            logging.info('Опция --config не указана, выбран файл конфигурации по умолчанию')
 
         config = get_new_config(config_dir, config)
         if 'OUT_LOG' in config.keys():
@@ -155,21 +163,35 @@ def main(options=sys.argv):
             logging.getLogger().addHandler(file_handler)
 
         if 'FAIL_PERC' in config.keys():
-            fail_limit = config['FAIL_PERC']
-        input_dir = os.path.abspath(config['LOG_DIR'])
+            fail_limit = float(config['FAIL_PERC'])
+        
+        if 'LOG_DIR' in config.keys():
+            input_dir = os.path.abspath(config['LOG_DIR'])
+        
+        if 'REPORT_DIR' in config.keys():
+            out_report_dir = os.path.abspath(config['REPORT_DIR'])
+
+        try:
+            logging.info('Поиск входных log-файлов в директории: {}'.format(input_dir))
+            file_names = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
+        except:
+            logging.exception('Неверно указана входная директория log-файлов: {}'.format(input_dir))
+            sys.exit()
 
         log_name_re = "^nginx-access-ui.log-(?P<file_date>[0-9]{8})\.(gz|plain)"
-        file_names = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
         file_names = [f for f in file_names if re.search(log_name_re,f)]
 
         if not file_names:
-            logging.info('В директории входных логов отсутствуют файлы с шаблонным названием: {}. Прерывание работы скрипта.'.format(input_dir))
+            logging.info('В директории входных логов отсутствуют файлы с шаблонным названием: {}.'.format(input_dir))
             sys.exit()
 
         file_name = max(file_names)
         file_date = re.search(log_name_re, file_name).groupdict()['file_date']
-        if os.path.isfile(os.path.join(config['REPORT_DIR'],'report-{}.html'.format(file_date))):
-            logging.info('Выходной отчет по последнему log-файлу уже существует. Прерывание работы скрипта.')
+        date_year = file_date[:4]
+        date_month = file_date[4:6]
+        date_day = file_date[6:8]
+        if os.path.isfile(os.path.join(out_report_dir,'report-{}.html'.format(file_date))):
+            logging.info('Выходной отчет по последнему log-файлу уже существует.')
             sys.exit()
         
         time_dict = dict()
@@ -188,16 +210,22 @@ def main(options=sys.argv):
             else:
                 bad_count += 1
 
-        if bad_count/(good_count+bad_count) > fail_limit:
-            logging.error('Высокий процент неудачно обработанных строк во входном log-файле. Прерывание работы скрипта.')
+        bad_percent = bad_count / (good_count+bad_count) * 100
+        fail_limit *= 100
+        if  bad_percent > fail_limit:
+            logging.error('Доля неудачно обработанных строк во входном log-файле {}%, что выше допустимого {}%'.\
+                format(round(bad_percent, 3), round(fail_limit, 3)))
             sys.exit()
+        else:
+            logging.info('Доля неудачно обработанных строк во входном log-файле {}%, что ниже допустимого {}%'.\
+                format(round(bad_percent, 3), round(fail_limit, 3)))
 
         time_sum = dict()
         for url in time_dict.keys():
             time_sum[url] = sum(time_dict[url])
         time_sorted = sorted(time_sum.items(), key=operator.itemgetter(1), reverse=True)
         out_list = list()
-        logging.info('Вычисление выходных значений таблицы отчета')
+        logging.info('Вычисление выходных значений величин для таблицы отчета')
         for url, sum_value in time_sorted[:config['REPORT_SIZE']]:
             n = len(time_dict[url])
             temp = sorted(time_dict[url])
@@ -211,7 +239,7 @@ def main(options=sys.argv):
                             'count_perc': n/good_count
                             })
         
-        logging.info('Округление значений для вставки в отчет...')
+        logging.info('Округление значений величин для вставки в отчет...')
         for elem in out_list:
             for key in elem.keys():
                 if isinstance(elem[key], float):
@@ -219,20 +247,20 @@ def main(options=sys.argv):
 
         with open('report.html', 'r') as f:
             html_template = f.read()
-        if not os.path.exists(config['REPORT_DIR']):
-            os.makedirs(config['REPORT_DIR'])
-        out_report_name = os.path.join(config['REPORT_DIR'], 'report-{}.html'.format(file_date))
+        if not os.path.exists(out_report_dir):
+            os.makedirs(out_report_dir)
+        out_report_name = os.path.join(out_report_dir, 'report-{}.{}.{}.html'.format(date_year, date_month, date_day))
         with open(out_report_name, 'w') as out_report:
             html_out = Template(html_template).safe_substitute(table_json=str(out_list))
             out_report.write(html_out)
         logging.info('Результат работы скрипта записан в файл {}'.format(out_report_name))
         logging.info('Работа скрипта успешно завершена.')
     except SystemExit:
-        sys.exit()
+        logging.info('Прерывание работы скрипта.')
     except:
         logging.exception('Неизвестная ошибка. Прерывание работы скрипта.')
-        sys.exit()
-        
+    finally:
+        close_logging()
 
 
 

@@ -3,5 +3,5 @@
 	"REPORT_DIR": "./reports",
 	"LOG_DIR": "./log",
 	"OUT_LOG": "out_log_file.log",
-	"FAIL_PERC": 0.2 
+	"FAIL_PERC": 0.5 
 }

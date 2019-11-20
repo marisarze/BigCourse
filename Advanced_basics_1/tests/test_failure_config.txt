@@ -1,0 +1,7 @@
+{
+	"REPORT_SIZE": 42,
+	"REPORT_DIR": "./tests/test_failure_reports",
+	"LOG_DIR": "./tests/test_input_logs",
+	"OUT_LOG": "./tests/test_failure_logs/test_failure_log.log",
+	"FAIL_PERC": 0.0 
+}
