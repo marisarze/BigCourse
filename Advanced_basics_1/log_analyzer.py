@@ -105,8 +105,9 @@ def close_logging():
     Закрытие потоков логгирования. Развязка процесса от файла выходного лога.
 
     """
-    for handler in logging.getLogger().handlers:
-        handler.close()
+    handler = logging.getLogger().handlers
+    handler[-1].flush()
+    handler[-1].close()
 
 
 def main(options=sys.argv):
@@ -133,6 +134,7 @@ def main(options=sys.argv):
         formatter = logging.Formatter('[%(asctime)s] %(levelname)s %(message)s', '%Y.%m.%d %H:%M:%S')
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setFormatter(formatter)
+        logging.getLogger().handlers = []
         logging.getLogger().setLevel(logging.INFO)
         logging.getLogger().addHandler(stream_handler)
         logging.info('Запуск скрипта...')
@@ -260,7 +262,7 @@ def main(options=sys.argv):
     except:
         logging.exception('Неизвестная ошибка. Прерывание работы скрипта.')
     finally:
-        close_logging()
+        logging.shutdown()
 
 
 
