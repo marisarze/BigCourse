@@ -1,7 +1,7 @@
-{
-	"REPORT_SIZE": 1000,
-	"REPORT_DIR": "./reports",
-	"LOG_DIR": "./log",
-	"OUT_LOG": "out_log_file.log",
-	"FAIL_PERC": 0.5 
-}
+	{
+		"REPORT_SIZE": 1000,
+		"REPORT_DIR": "./reports",
+		"LOG_DIR": "./log",
+		"OUT_LOG": "logs_out/out_log_file.log",
+		"FAIL_PERC": 0.5 
+	}
