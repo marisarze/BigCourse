@@ -27,8 +27,8 @@ class TestAnalyzer(unittest.TestCase):
         self.assertTrue(os.path.exists(r'./test_success_reports/report-2019.11.11.html'))
         with open(r'./test_success_reports/report-2019.11.11.html', 'r') as f:
             report_text = f.read()
-        print(re.findall("var table = \[(\{('\w+': [^\{\}]*){8}\}(, )*){420}\]", report_text))
-        self.assertIsNotNone(re.findall(r"(\{('\w+': [^\{\}]*){8}\}){42}", report_text))
+        list_len = len(re.findall(r"((\{('\w+': [^\{\}]*(, ){0,1})\})(, ){0,1}){1}", report_text))
+        self.assertTrue(list_len == 42)
         
 
     def test_when_failure_main(self):
