@@ -138,14 +138,15 @@ class ORMMeta(type):
 class ORMBase(metaclass=ORMMeta):
     """ User interface for the base class """
 
+    class_name = self.__class__.__name__
     def __init__(self, **kwargs):
         _required = []
-        class_name = self.__class__.__name__
+        
         for name in self._fields.keys():
             if self._fields[name].required and (name not in kwargs.keys()):
                 _required.append(name)
         if _required:
-            raise AttributeError('Additional fields are required to create class {}: {} '.format(self.class_name, ','.join(_required)))
+            raise AttributeError('Additional fields are required to create class {}: {} '.format(self.class_name, ', '.join(_required)))
         
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -160,7 +161,7 @@ class ORMBase(metaclass=ORMMeta):
         else:
             raise AttributeError('Unknown field "{}" in class {}'.format(key, self.class_name))
 
-    def get_fields(self):
+    def get_field_values(self):
         """ Convert given object to JSON """
         new_dictionary = {}
         allattrs = [name for name in dir(self) if name in self._fields.keys()]
@@ -210,13 +211,19 @@ def check_auth(request):
 def method_handler(request, ctx, store):
     response, code = None, None
     reques_body = request['body']
-    
-    main_request = MethodRequest(request_body)
-    if main_request.method == online_score:
-        auxilary_request = OnlineScoreRequest(main_request.arguments)
-    else:
-        auxilary_request = ClientsInterestsRequest(main_request.arguments)
-
+    try:
+        main_request = MethodRequest(request_body)
+        if main_request.method == online_score and check_auth(main_request):
+            if  main_request.is_admin:
+                response = {"score": 42}
+                code = 200
+            else:
+                auxilary_request = OnlineScoreRequest(main_request.arguments)
+                response = {"score": get_score(auxilary_request.get_field_values)}
+        else:
+            auxilary_request = ClientsInterestsRequest(main_request.arguments)
+    except AttributeError as e:
+        response_body = {"code": 422, "error": e.args[0]}
 
 
     return response, code
