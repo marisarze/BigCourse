@@ -60,16 +60,7 @@ class CharField(Field):
 class ArgumentsField(Field):
     def validate(self, value):
         if isinstance(value, dict):
-            variants = [['phone', 'email'],
-                        ['name', 'last_name'],
-                        ['gender', 'birthday']]
-            cases = []
-            for pair in variants:
-                case = True
-                for name in pair:
-                    case = case and (name in value.keys())
-                cases.append(case)
-            return any(cases)
+            return True
         return False
 
 
@@ -121,7 +112,7 @@ class ClientIDsField(Field):
 
 class ORMMeta(type):
     """ Metaclass of our fields """
-
+    
     def __new__(self, class_name, bases, namespace):
         fields = {
             name: field
@@ -138,18 +129,21 @@ class ORMMeta(type):
 class ORMBase(metaclass=ORMMeta):
     """ User interface for the base class """
 
-    class_name = self.__class__.__name__
-    def __init__(self, **kwargs):
+    def __init__(self, kwargs):
+        self.validate(kwargs)        
+
+
+    def validate(self, kwargs):
+        class_name = self.__class__.__name__
         _required = []
-        
         for name in self._fields.keys():
             if self._fields[name].required and (name not in kwargs.keys()):
                 _required.append(name)
         if _required:
             raise AttributeError('Additional fields are required to create class {}: {} '.format(self.class_name, ', '.join(_required)))
-        
         for key, value in kwargs.items():
             setattr(self, key, value)
+
 
     def __setattr__(self, key, value):
         """ Magic method setter """
@@ -161,8 +155,8 @@ class ORMBase(metaclass=ORMMeta):
         else:
             raise AttributeError('Unknown field "{}" in class {}'.format(key, self.class_name))
 
-    def get_field_values(self):
-        """ Convert given object to JSON """
+    def get_fields(self):
+        """ Collect to dictionary all field elements """
         new_dictionary = {}
         allattrs = [name for name in dir(self) if name in self._fields.keys()]
         for name in allattrs:
@@ -184,6 +178,20 @@ class OnlineScoreRequest(ORMBase):
     birthday = BirthDayField(required=False, nullable=True)
     gender = GenderField(required=False, nullable=True)
 
+    def validate(self, kwargs):
+        variants = [['phone', 'email'],
+                    ['name', 'last_name'],
+                    ['gender', 'birthday']]
+        cases = []
+        for pair in variants:
+            case = True
+            for name in pair:
+                case = case and (name in kwargs.keys())
+            cases.append(case)
+        if not any(cases):
+            raise AttributeError("There are not any pairs in arguments: phone-email, name-last_name, gender-birthday")
+        super().validate(kwargs)
+
 
 class MethodRequest(ORMBase):
     account = CharField(required=False, nullable=True)
@@ -200,9 +208,11 @@ class MethodRequest(ORMBase):
 
 def check_auth(request):
     if request.is_admin:
-        digest = hashlib.sha512(datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).hexdigest()
+        digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
     else:
-        digest = hashlib.sha512(request.account + request.login + SALT).hexdigest()
+        digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
+    print('digest is : ', digest)
+    print('tiken is : ', request.token)
     if digest == request.token:
         return True
     return False
@@ -210,21 +220,29 @@ def check_auth(request):
 
 def method_handler(request, ctx, store):
     response, code = None, None
-    reques_body = request['body']
+    request_body = request['body']
     try:
         main_request = MethodRequest(request_body)
-        if main_request.method == online_score and check_auth(main_request):
-            if  main_request.is_admin:
+        if not check_auth(main_request):
+            code = 403
+            return response, code
+        if main_request.method == 'online_score':
+            auxilary_request = OnlineScoreRequest(main_request.arguments)
+            ctx['has'] = [i for i in auxilary_request.get_fields().keys()]
+            if  not main_request.is_admin:
                 response = {"score": 42}
-                code = 200
             else:
-                auxilary_request = OnlineScoreRequest(main_request.arguments)
-                response = {"score": get_score(auxilary_request.get_field_values)}
-        else:
+                response = {"score": get_score(None, auxilary_request.get_field_values)}    
+        elif main_request.method == 'clients_interests':
             auxilary_request = ClientsInterestsRequest(main_request.arguments)
+            ctx['nclients'] = len(auxilary_request.client_ids)
+            for id in auxilary_request.client_ids:
+                response[id] = get_interests(None, id)
+        code = 200
+        return response, code
     except AttributeError as e:
-        response_body = {"code": 422, "error": e.args[0]}
-
+        response = {"code": 422, "error": e.args[0]}
+        code = 422
 
     return response, code
 
@@ -246,8 +264,8 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
         try:
             print('headers: ', self.headers, end='\n')
             data_string = self.rfile.read(int(self.headers['Content-Length']))
-            print('data_string: ', data_string.decode(), end='\n')
             request = json.loads(data_string)
+            print('request in DOPOST: ', request, end='\n')
         except:
             print('bad_code', end='\n')
             code = BAD_REQUEST
@@ -263,7 +281,7 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
                     code = INTERNAL_ERROR
             else:
                 code = NOT_FOUND
-
+        print('code is:', code)
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
