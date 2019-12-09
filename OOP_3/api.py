@@ -67,14 +67,14 @@ class ArgumentsField(Field):
 
 class EmailField(Field):
     def validate(self, value):
-        return len(re.findall(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", em))>0
+        return len(re.findall(r"(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", value)) == 1
 
 
 class PhoneField(Field):
     def validate(self, value):
             try:
                 number = int(value)
-                if all(number >= 7 * 10**10, number < 8 * 10**10):
+                if all([number >= 7 * 10**10, number < 8 * 10**10]):    
                     return True
             except:
                 return False
@@ -128,19 +128,17 @@ class ORMMeta(type):
 
 class ORMBase(metaclass=ORMMeta):
     """ User interface for the base class """
-
     def __init__(self, kwargs):
         self.validate(kwargs)        
 
 
     def validate(self, kwargs):
-        class_name = self.__class__.__name__
         _required = []
         for name in self._fields.keys():
             if self._fields[name].required and (name not in kwargs.keys()):
                 _required.append(name)
         if _required:
-            raise AttributeError('Additional fields are required to create class {}: {} '.format(self.class_name, ', '.join(_required)))
+            raise AttributeError('Additional fields are required to create class {}: {} '.format(self.__class__.__name__, ', '.join(_required)))
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -151,9 +149,9 @@ class ORMBase(metaclass=ORMMeta):
             if self._fields[key].validate(value):
                 super().__setattr__(key, value)
             else:
-                raise AttributeError('Invalid value "{}" for field {} in class "{}"'.format(value, key, self.class_name))
+                raise AttributeError('Invalid value "{}" for field {} in class "{}"'.format(value, key, self.__class__.__name__))
         else:
-            raise AttributeError('Unknown field "{}" in class {}'.format(key, self.class_name))
+            raise AttributeError('Unknown field "{}" in class {}'.format(key, self.__class__.__name__))
 
     def get_fields(self):
         """ Collect to dictionary all field elements """
@@ -161,7 +159,6 @@ class ORMBase(metaclass=ORMMeta):
         allattrs = [name for name in dir(self) if name in self._fields.keys()]
         for name in allattrs:
             new_dictionary[name] = getattr(self, name)
-
         return new_dictionary
 
 
@@ -180,7 +177,7 @@ class OnlineScoreRequest(ORMBase):
 
     def validate(self, kwargs):
         variants = [['phone', 'email'],
-                    ['name', 'last_name'],
+                    ['first_name', 'last_name'],
                     ['gender', 'birthday']]
         cases = []
         for pair in variants:
@@ -211,37 +208,37 @@ def check_auth(request):
         digest = hashlib.sha512((datetime.datetime.now().strftime("%Y%m%d%H") + ADMIN_SALT).encode('utf-8')).hexdigest()
     else:
         digest = hashlib.sha512((request.account + request.login + SALT).encode('utf-8')).hexdigest()
-    print('digest is : ', digest)
-    print('tiken is : ', request.token)
+    logging.info('digest is {}'.format(digest))
     if digest == request.token:
         return True
     return False
 
 
 def method_handler(request, ctx, store):
-    response, code = None, None
+    response, code = {}, None
     request_body = request['body']
+    logging.info('request body is: {}'.format(request_body))
     try:
         main_request = MethodRequest(request_body)
         if not check_auth(main_request):
             code = 403
             return response, code
         if main_request.method == 'online_score':
-            auxilary_request = OnlineScoreRequest(main_request.arguments)
-            ctx['has'] = [i for i in auxilary_request.get_fields().keys()]
-            if  not main_request.is_admin:
+            method_request = OnlineScoreRequest(main_request.arguments)
+            ctx['has'] = [i for i in method_request.get_fields().keys()]
+            if  main_request.is_admin:
                 response = {"score": 42}
             else:
-                response = {"score": get_score(None, auxilary_request.get_field_values)}    
+                response = {"score": get_score(None, **method_request.get_fields())}    
         elif main_request.method == 'clients_interests':
-            auxilary_request = ClientsInterestsRequest(main_request.arguments)
-            ctx['nclients'] = len(auxilary_request.client_ids)
-            for id in auxilary_request.client_ids:
+            method_request = ClientsInterestsRequest(main_request.arguments)
+            ctx['nclients'] = len(method_request.client_ids)
+            for id in method_request.client_ids:
                 response[id] = get_interests(None, id)
         code = 200
         return response, code
     except AttributeError as e:
-        response = {"code": 422, "error": e.args[0]}
+        response = e.args[0]
         code = 422
 
     return response, code
@@ -257,17 +254,14 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
         return headers.get('HTTP_X_REQUEST_ID', uuid.uuid4().hex)
 
     def do_POST(self):
-        print('------------------------------------------------------------------------')
+        logging.info('----------------------------------------------')
         response, code = {}, OK
         context = {"request_id": self.get_request_id(self.headers)}
         request = None
         try:
-            print('headers: ', self.headers, end='\n')
             data_string = self.rfile.read(int(self.headers['Content-Length']))
             request = json.loads(data_string)
-            print('request in DOPOST: ', request, end='\n')
         except:
-            print('bad_code', end='\n')
             code = BAD_REQUEST
 
         if request:
@@ -281,7 +275,6 @@ class MainHTTPHandler(BaseHTTPRequestHandler):
                     code = INTERNAL_ERROR
             else:
                 code = NOT_FOUND
-        print('code is:', code)
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
