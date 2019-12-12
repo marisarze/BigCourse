@@ -6,3 +6,173 @@
 [2019.11.21 21:10:06] INFO Округление значений величин для вставки в отчет...
 [2019.11.21 21:10:06] INFO Результат работы скрипта записан в файл C:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\reports\report-2019.07.03.html
 [2019.11.21 21:10:06] INFO Работа скрипта успешно завершена.
+[2019.12.12 21:07:03] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 21:07:03] INFO Поиск входных log-файлов в директории: ./log
+[2019.12.12 21:07:03] ERROR Неверно указана входная директория log-файлов: ./log
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 68, in find_last_log
+    file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+FileNotFoundError: [WinError 3] The system cannot find the path specified: './log'
+[2019.12.12 21:07:03] INFO Прерывание работы скрипта.
+[2019.12.12 21:07:28] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 21:07:28] INFO Поиск входных log-файлов в директории: ./log
+[2019.12.12 21:07:28] ERROR Неверно указана входная директория log-файлов: ./log
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 68, in find_last_log
+    file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+FileNotFoundError: [WinError 3] The system cannot find the path specified: './log'
+[2019.12.12 21:07:28] INFO Прерывание работы скрипта.
+[2019.12.12 21:08:22] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 21:08:22] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 21:08:22] INFO Открыте входного log-файла для чтения: .\nginx-access-ui.log-20190703.plain
+[2019.12.12 21:08:22] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 224, in main
+    for entry in parser(full_name):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 150, in parser
+    input_file = open(path)
+FileNotFoundError: [Errno 2] No such file or directory: '.\\nginx-access-ui.log-20190703.plain'
+[2019.12.12 21:24:01] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 21:24:01] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 21:24:01] INFO Открыте входного log-файла для чтения: .\nginx-access-ui.log-20190703.plain
+[2019.12.12 21:24:01] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 223, in main
+    for entry in parser(full_name):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 149, in parser
+    input_file = open(path)
+FileNotFoundError: [Errno 2] No such file or directory: '.\\nginx-access-ui.log-20190703.plain'
+[2019.12.12 21:34:29] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 21:34:29] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 21:34:29] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 231, in main
+    if os.path.isfile(os.path.join(out_report_dir,'report-{}.html'.format(file_date))):
+NameError: name 'out_report_dir' is not defined
+[2019.12.12 22:30:17] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:30:17] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:30:17] INFO Выходной отчет по последнему log-файлу уже существует.
+[2019.12.12 22:30:17] INFO Прерывание работы скрипта.
+[2019.12.12 22:30:40] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:30:40] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:30:40] INFO Открыте входного log-файла для чтения: nginx-access-ui.log-20190703.plain
+[2019.12.12 22:30:40] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 279, in main
+    time_dict, bad_count, good_count, all_time = get_request_times_from_log(file_name)
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 164, in get_request_times_from_log
+    for entry in parser(path):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 149, in parser
+    input_file = open(path)
+FileNotFoundError: [Errno 2] No such file or directory: 'nginx-access-ui.log-20190703.plain'
+[2019.12.12 22:34:50] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:34:50] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:34:50] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:35:08] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:35:08] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 279, in main
+    time_dict, bad_count, good_count, all_time = get_request_times_from_log(full_name)
+ValueError: not enough values to unpack (expected 4, got 3)
+[2019.12.12 22:37:25] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:37:25] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:37:25] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:37:43] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:37:43] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 282, in main
+    fail_limit *= 100
+UnboundLocalError: local variable 'fail_limit' referenced before assignment
+[2019.12.12 22:41:53] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:41:53] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:41:53] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:42:10] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:42:10] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 283, in main
+    fail_limit = config('FAIL_PERC') * 100
+TypeError: 'dict' object is not callable
+[2019.12.12 22:43:20] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:43:20] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:43:20] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:43:38] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:43:38] ERROR Доля неудачно обработанных строк во входном log-файле 99.998%, что выше допустимого 50.0%
+[2019.12.12 22:43:38] INFO Прерывание работы скрипта.
+[2019.12.12 22:47:11] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:47:11] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:47:11] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:47:29] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:47:29] INFO Доля неудачно обработанных строк во входном log-файле 99.998%, что ниже допустимого 100.0%
+[2019.12.12 22:47:29] INFO Вычисление выходных значений величин для таблицы отчета
+[2019.12.12 22:47:29] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 293, in main
+    out_list = get_stats(time_dict, config['REPORT_SIZE'])
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 196, in get_stats
+    'count_perc': n/good_count
+NameError: name 'good_count' is not defined
+[2019.12.12 22:51:07] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:51:07] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:51:07] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:51:25] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:51:25] INFO Доля неудачно обработанных строк во входном log-файле 99.998%, что ниже допустимого 100.0%
+[2019.12.12 22:51:25] INFO Вычисление выходных значений величин для таблицы отчета
+[2019.12.12 22:51:25] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 296, in main
+    out_list = round_values_in_list(out_list)
+TypeError: round_values_in_list() missing 1 required positional argument: 'number'
+[2019.12.12 22:54:39] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:54:39] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:54:39] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:54:57] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:54:57] INFO Доля неудачно обработанных строк во входном log-файле 0.002%, что ниже допустимого 100.0%
+[2019.12.12 22:54:57] INFO Вычисление выходных значений величин для таблицы отчета
+[2019.12.12 22:54:58] INFO Округление значений величин для вставки в отчет...
+[2019.12.12 22:54:58] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 298, in main
+    create_report(out_list, report_name)
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 220, in create_report
+    html_out = Template(html_template).safe_substitute(table_json=str(out_list))
+NameError: name 'out_list' is not defined
+[2019.12.12 22:57:14] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:57:14] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:57:14] INFO Выходной отчет по последнему log-файлу уже существует.
+[2019.12.12 22:57:14] INFO Прерывание работы скрипта.
+[2019.12.12 22:57:27] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 22:57:27] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 22:57:27] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 22:57:45] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 22:57:45] INFO Доля неудачно обработанных строк во входном log-файле 0.002%, что ниже допустимого 100.0%
+[2019.12.12 22:57:45] INFO Вычисление выходных значений величин для таблицы отчета
+[2019.12.12 22:57:45] INFO Округление значений величин для вставки в отчет...
+[2019.12.12 22:57:45] INFO Результат работы скрипта записан в файл ./reports\report-2019.07.03.html
+[2019.12.12 22:57:45] INFO Работа скрипта успешно завершена.
+[2019.12.12 23:33:10] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 23:33:10] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 23:33:10] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 23:33:28] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 23:33:28] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 293, in main
+    logging.info(tmp_string.format(insert[1]))
+IndexError: tuple index out of range
+[2019.12.12 23:39:32] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 23:39:32] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 23:39:32] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 23:39:50] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 23:39:50] ERROR Неизвестная ошибка. Прерывание работы скрипта.
+Traceback (most recent call last):
+  File "c:\Users\Tom\Documents\Otus\BigCourse\Advanced_basics_1\log_analyzer.py", line 292, in main
+    logging.info(tmp_string.format('ниже'))
+NameError: name 'tmp_string' is not defined
+[2019.12.12 23:41:47] INFO Логгирование дополнительно ведется в файл logs_out/out_log_file.log
+[2019.12.12 23:41:47] INFO Поиск входных log-файлов в директории: ./log_samples
+[2019.12.12 23:41:47] INFO Открыте входного log-файла для чтения: ./log_samples\nginx-access-ui.log-20190703.plain
+[2019.12.12 23:42:05] INFO Входной log-файл прочитан и закрыт
+[2019.12.12 23:42:05] INFO Доля неудачно обработанных строк во входном log-файле 0.002%, что ниже допустимого 100.0%
+[2019.12.12 23:42:05] INFO Вычисление выходных значений величин для таблицы отчета
+[2019.12.12 23:42:05] INFO Округление значений величин для вставки в отчет...
+[2019.12.12 23:42:05] INFO Результат работы скрипта записан в файл ./reports\report-2019.07.03.html
+[2019.12.12 23:42:05] INFO Работа скрипта успешно завершена.
